@@ -85,8 +85,8 @@ class SuctionTask:
                         Empty
                     )
                     client()
-                except rospy.ServiceException as err:
-                    print "Service call (Vacuum) failed: %s" % e
+                except rospy.ServiceException as e:
+                    print("Service call (Vacuum) failed: %s".format(e))
         else:
             suction_service = self.name + '/suction_cmd'
             try:
@@ -101,9 +101,9 @@ class SuctionTask:
                     VacuumCmd
                 )
                 res = client(cmd)
-                print res
-            except rospy.ServiceException as err:
-                print "Service call (Vacuum) failed: %s" % e
+                print(res)
+            except rospy.ServiceException as e:
+                print("Service call (Vacuum) failed: %s".format(e))
 
     def gripper_vacuum_on(self):
         self.robot_cmd_client('vacuumOn')
