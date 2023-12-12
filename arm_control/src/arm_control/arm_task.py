@@ -24,8 +24,8 @@ from manipulator_h_base_module_msgs.srv import GetKinematicsPose, GetKinematicsP
 from manipulator_h_base_module_msgs.srv import GetJointPose, GetJointPoseResponse
 from manipulator_h_base_module_msgs.srv import CheckRangeLimit, CheckRangeLimitRequest
 from vacuum_cmd_msg.srv import VacuumCmd
-from suction import SuctionTask
-from robotiq_2f_gripper import RobotiqGripper
+from arm_control.suction import SuctionTask
+from arm_control.robotiq_2f_gripper import RobotiqGripper
 
 _POS = (0, 0, 0)
 _ORI = (0, 0, 0)
@@ -193,9 +193,9 @@ class ArmTask:
     def cmd_queue_2nd_empty(self):
         return self.__cmd_queue_2nd.empty()
 
-    @property
-    def status(self):
-        return self.status
+    # @property
+    # def status(self):
+    #     return self.status
 
     @property
     def is_busy(self):
