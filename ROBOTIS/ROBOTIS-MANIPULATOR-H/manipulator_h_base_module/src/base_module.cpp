@@ -350,8 +350,9 @@ bool BaseModule::checkRangeLimitCallback(manipulator_h_base_module_msgs::CheckRa
                                  req.pose.orientation.z);
 
   rotation = robotis_framework::convertQuaternionToRotation(quaterniond);
-  
+  robotis_->is_ik = true;
   res.limit_value = manipulator_->limit_check(positoin, rotation);
+  robotis_->is_ik = false;
   res.is_limit = (res.limit_value > 1)? true : false;
   
   return true;
@@ -796,6 +797,7 @@ void BaseModule::generateJointTrajProcess()
   double tol = 90 * (mov_speed / 100) * DEGREE2RADIAN; // rad per sec
   double mov_time = 1.5;
   
+  manipulator_->manipulator_link_data_[0]->mov_speed_ = mov_speed;
 
   double max_diff, abs_diff, slide_diff;
   slide_diff = fabs(robotis_->joint_pose_msg_.slide_pos - slide_->slide_pos);

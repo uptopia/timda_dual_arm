@@ -398,7 +398,11 @@ bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd ta
   }
 
   ik_success = inverseKinematics_(tar_position, tar_orientation, tar_phi, tar_slide_pos, Old_JointAngle, is_p2p);
-
+  if( !ik_success )
+  {
+    Eigen::MatrixXd rpy = rotation2rpy(tar_orientation);
+    std::cout<<"IK Failed: pos = "<< tar_position << ", " << rpy << ", " << tar_slide_pos << std::endl;
+  }
   forwardKinematics(7);
   
   int joint_num;
@@ -429,7 +433,11 @@ bool ManipulatorKinematicsDynamics::inverseKinematics(int to, Eigen::MatrixXd ta
     return false;
   }
   else
+  {
+    Eigen::MatrixXd rpy = rotation2rpy(tar_orientation);
+    std::cout<<"Failed pose: "<<tar_position<<", "<< rpy << ", " << tar_slide_pos<<std::endl;
     return false;
+  }
 }
 
 bool ManipulatorKinematicsDynamics::inverseKinematics_test(Eigen::MatrixXd tar_position,
@@ -444,7 +452,11 @@ bool ManipulatorKinematicsDynamics::inverseKinematics_test(Eigen::MatrixXd tar_p
 
   // ik_success = inverseKinematics_old(tar_position, tar_orientation, tar_phi, tar_slide_pos, Old_JointAngle, true, false);
   ik_success = inverseKinematics_(tar_position, tar_orientation, tar_phi, tar_slide_pos, Old_JointAngle, true, false);
-
+  if(!ik_success)
+  {
+    Eigen::MatrixXd rpy = rotation2rpy(tar_orientation);
+    std::cout<<"IK Failed: pos = "<< tar_position << ", " << rpy << ", " << tar_slide_pos << std::endl;
+  }
   int joint_num;
   std::vector<int> idx = findRoute(8);
 
@@ -544,6 +556,7 @@ bool ManipulatorKinematicsDynamics::inverseKinematics_( Eigen::VectorXd goal_pos
   Oc << goal_position(0)-d4*R07(0,2), goal_position(1)-d4*R07(1,2), goal_position(2)-d4*R07(2,2);
 
   DHTABLE(0,2) = slide_position;
+  ROS_INFO("DHTABLE(0,2) in IK begin: %f", DHTABLE(0,2));
 
   Ps << 0, d1*cos(DHTABLE(0,3)), slide_position;   
   Vsw = Oc - Ps;
@@ -711,16 +724,16 @@ bool ManipulatorKinematicsDynamics::inverseKinematics_( Eigen::VectorXd goal_pos
     if(AA)
     {
       if(BB)
-        ROS_INFO("[FUCK IKFIAL] Solution A1B1");
+        ROS_ERROR("[FUCK IKFIAL] Solution A1B1");
       else
-        ROS_INFO("[FUCK IKFIAL] Solution A1B2");
+        ROS_ERROR("[FUCK IKFIAL] Solution A1B2");
     }
     else
     {
       if(BB)
-        ROS_INFO("[FUCK IKFIAL] Solution A2B1");
+        ROS_ERROR("[FUCK IKFIAL] Solution A2B1");
       else
-        ROS_INFO("[FUCK IKFIAL] Solution A2B2");
+        ROS_ERROR("[FUCK IKFIAL] Solution A2B2");
     }
   }
 
@@ -773,6 +786,7 @@ bool ManipulatorKinematicsDynamics::inverseKinematics_( Eigen::VectorXd goal_pos
     for (int id = 0; id <= MAX_JOINT_ID; id++)
       manipulator_link_data_[id]->joint_angle_test = JointAngle.coeff(id);
   }
+  ROS_INFO("DHTABLE(0,2) in IK begin: %f", DHTABLE(0,2));
   return ik_success;
 }
 
@@ -1162,7 +1176,7 @@ bool ManipulatorKinematicsDynamics::slideInverseKinematics(Eigen::Vector3d& goal
   Lmin = 0.15;
   Smax = 0;
   Smin = -0.8;
-  
+  ROS_INFO("Lgs in slide IK: %f", Lgs);
   if(Lgs > d2+d3-0.01)
   {
     std::cout<<"Out of range 1 !!!"<<std::endl;
@@ -1220,6 +1234,7 @@ bool ManipulatorKinematicsDynamics::slideInverseKinematics(Eigen::Vector3d& goal
   weight = Lgs / Lmax;
   slide_position = weight * fun1 + (1-weight) * fun2;
   goal_slide_pos = (slide_position <= Smax) ? (slide_position >= Smin) ? slide_position : Smin : Smax;
+  ROS_INFO("goal_slide_pos in slide IK: %f", goal_slide_pos);
   if(fabs(goal_slide_pos - slide_pos) > 0.001 && !is_p2p)
     goal_slide_pos = slide_pos + 0.001 * (goal_slide_pos - slide_pos > 0) ? 1 : -1;
   if(slide_position > Smax || slide_position < Smin)
@@ -1387,40 +1402,59 @@ void ManipulatorKinematicsDynamics::getPhiAngle()
 
 double ManipulatorKinematicsDynamics::limit_check(Eigen::Vector3d &goal_position, Eigen::Matrix3d &rotation)
 {
-  double Lsw, Low;
+  double slide_pos = 0;
   double tar_slide_pos = 0;
   Eigen::Vector3d Oc;
-  Eigen::Vector3d test_pos;
- 
+  bool slide_success = slideInverseKinematics(goal_position, rotation, slide_pos, tar_slide_pos, true);
   Oc << goal_position(0)-d4*rotation(0,2), goal_position(1)-d4*rotation(1,2), goal_position(2)-d4*rotation(2,2);
-  
-  test_pos = Oc;
-  test_pos(1) = test_pos(1) - (d1*RL_prm);
-  if(Oc(2) < -0.8)
-  {
-    test_pos(2) += 0.8;
-    tar_slide_pos = -0.8;
-  }
-  else if (Oc(2) < -0.01)
-  {
-    test_pos(2) = 0.01;
-    tar_slide_pos = Oc(2)+0.01;
-  }
-  Oc(2) = 0;
-  Lsw = test_pos.norm();
-  Low = Oc.norm();
-  if(Lsw < (d2+d3) && Low > 0.13)
+  Oc(1) = Oc(1) - (d1*RL_prm);
+  Oc(2) = Oc(2) - tar_slide_pos;
+  double Lgs = Oc.norm();
+  ROS_INFO("Lgs in linit check: %f", Lgs);
+  ROS_INFO("tar_slide_pos in linit check: %f", tar_slide_pos);
+  if(slide_success)
   {
     bool ik_success = inverseKinematics_test(goal_position, rotation, 0, tar_slide_pos);
     if(!ik_success)
       return 10;
-    double range = Lsw/(d2+d3);
+    double range = Lgs/(d2+d3);
     return range;
   }
   else
-    std::cout<<"Out of range !!!"<<Oc<<std::endl;
-  return 10;
+    return 10;
+  // double Lsw, Low;
+  // double tar_slide_pos = 0;
+  // Eigen::Vector3d Oc;
+  // Eigen::Vector3d test_pos;
+ 
+  // Oc << goal_position(0)-d4*rotation(0,2), goal_position(1)-d4*rotation(1,2), goal_position(2)-d4*rotation(2,2);
   
+  // test_pos = Oc;
+  // test_pos(1) = test_pos(1) - (d1*RL_prm);
+  // if(Oc(2) < -0.8)
+  // {
+  //   test_pos(2) += 0.8;
+  //   tar_slide_pos = -0.8;
+  // }
+  // else if (Oc(2) < -0.01)
+  // {
+  //   test_pos(2) = 0.01;
+  //   tar_slide_pos = Oc(2)+0.01;
+  // }
+  // Oc(2) = 0;
+  // Lsw = test_pos.norm();
+  // Low = Oc.norm();
+  // if(Lsw <= (d2+d3 - 0.01) && Low > 0.15)
+  // {
+  //   bool ik_success = inverseKinematics_test(goal_position, rotation, 0, tar_slide_pos);
+  //   if(!ik_success)
+  //     return 10;
+  //   double range = Lsw/(d2+d3);
+  //   return range;
+  // }
+  // else
+  //   std::cout<<"Out of range !!!"<<Oc<<std::endl;
+  // return 10;
 }
 
 Eigen::MatrixXd ManipulatorKinematicsDynamics::rotationX( double angle )
