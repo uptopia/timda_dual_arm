@@ -92,7 +92,7 @@ _POS = (.3, 0, .15)  #
             )
             res = get_endpos('arm')
             return res
-        except rospy.ServiceException, e:
+        except rospy.ServiceException as err:
             print "Service call failed: %s" % e
 
     def quaternion2euler(self, ori):

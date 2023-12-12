@@ -19,7 +19,7 @@ class GetObjInfo():
             )
             res = req(side)
             return res
-        except rospy.ServiceException, e:
+        except rospy.ServiceException as err:
             print "Service call failed: %s" % e
 
     def get_obj_info(self, side, arm_ori):
