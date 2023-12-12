@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 """Use to generate dual_arm task and control both arms."""
@@ -6,7 +6,7 @@
 import rospy
 import tf
 #import queue
-import Queue as queue
+import queue
 import threading
 import copy
 # import object_distribtion

@@ -2,7 +2,7 @@
 
 from sys import dont_write_bytecode
 import rospy
-import Queue as queue
+import queue
 # from Queue import Queue
 import copy
 import numpy as np

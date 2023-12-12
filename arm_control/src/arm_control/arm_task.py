@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
 """Use to generate arm task and run."""
 
 import rospy
 import tf
-import Queue as queue
+import queue
 import copy
 # import object_distribtion
 

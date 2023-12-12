@@ -5,7 +5,7 @@ from enum import IntEnum
 
 import rospy
 #import queue
-import Queue as queue
+import queue
 import copy
 import numpy as np
 from std_msgs.msg import Bool, Int32

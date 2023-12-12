@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python33
 
 import rospy
 from math import radians, degrees, pi

@@ -8,7 +8,7 @@ import tf
 import ConfigParser
 import enum
 import argparse
-import Queue as queue
+import queue
 import copy
 #import Hiwin_RT605_Socket_test_andy as ArmTask
 from hand_eye.srv import hand_eye_calibration, hand_eye_calibrationRequest
